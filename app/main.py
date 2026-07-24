@@ -1,25 +1,20 @@
-from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage,AIMessage,SystemMessage
-from dotenv import load_dotenv
+from prompts import SYSTEM_PROMPT
+from models import llm
 import streamlit as st
 
-load_dotenv()
 
 
-#calling the model 
-llm = ChatGroq(model='llama-3.1-8b-instant')
 
 #chatbot header
 st.header("Seora Assistance")
 
 
-#define  system message 
-system_message = SystemMessage(content="You are a helpful assistance,your task is to give ans with in 1 to 2 sentences.")
 
 
 #define chat history 
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [system_message]
+    st.session_state.chat_history = [SYSTEM_PROMPT]
 
 
 #print chat history one by one 
@@ -39,17 +34,20 @@ user_input = st.chat_input("Say something..")
 
 
 if user_input:
-    if user_input.strip().lower() == {'stop','exit','break'}:
+    if user_input.strip().lower() in {'stop','exit','break'}:
         st.stop()
 
     st.session_state.chat_history.append(HumanMessage(content=user_input))
     with st.chat_message('user'):
         st.write(user_input)
+    try:
+        with st.spinner("Thinking..."):
+            response = llm.invoke(st.session_state.chat_history)
+    except Exception as e:
+        st.error(str(e))
 
-    responce = llm.invoke(st.session_state.chat_history)
-
-    st.session_state.chat_history.append(AIMessage(content=responce.content))
+    st.session_state.chat_history.append(AIMessage(content=response.content))
     with st.chat_message("assistant"):
-        st.write(responce.content)
+        st.write(response.content)
 
     
